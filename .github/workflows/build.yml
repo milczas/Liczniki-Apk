@@ -27,6 +27,9 @@ jobs:
       with:
         gradle-version: '7.6.3'
 
+    - name: Instalacja Android Build Tools 33.0.2
+      run: echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2"
+
     - name: Instalacja środowiska Cordova
       run: npm install -g cordova
 
