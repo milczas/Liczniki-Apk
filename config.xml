@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.rodborowka.liczniki" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>Liczniki ROD</name>
+    <description>Aplikacja do odczytu liczników ROD Borówka w Nekli.</description>
+    <author email="tomasz@rodborowka.pl" href="http://rodborowka.pl">Tomasz Mlicki</author>
+    <content src="index.html" />
+    <access origin="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <preference name="Orientation" value="portrait" />
+</widget>
