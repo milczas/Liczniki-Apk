@@ -1,0 +1,13 @@
+{
+  "name": "rodborowka-liczniki",
+  "version": "1.0.0",
+  "displayName": "Liczniki ROD",
+  "cordova": {
+    "platforms": [
+      "android"
+    ]
+  },
+  "dependencies": {
+    "cordova-android": "^12.0.0"
+  }
+}
