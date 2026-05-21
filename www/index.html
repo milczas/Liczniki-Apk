@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROD Borówka - Odczyty</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#121212">
+    <style>
+        :root { --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --accent: #bb86fc; --success: #03dac6; --error: #cf6679; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 15px; margin: 0; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #333; max-width: 400px; margin: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        
+        /* Styl strony startowej */
+        #start-screen { text-align: center; padding: 40px 10px; }
+        #start-screen h1 { color: var(--accent); font-size: 1.8rem; margin-bottom: 15px; }
+        #start-screen .logo { font-size: 4rem; margin-bottom: 10px; }
+        
+        /* Nowe klasy tekstowe */
+        .info-text { font-size: 0.9rem; opacity: 0.8; line-height: 1.5; margin-bottom: 15px; padding: 0 10px; text-align: center; }
+        .author { font-size: 0.8rem; opacity: 0.5; margin-bottom: 25px; font-style: italic; }
+
+        #main-app { display: none; }
+
+        h2 { color: var(--accent); text-align: center; margin-top: 0; }
+        label { display: block; margin: 15px 0 5px; opacity: 0.8; font-weight: bold; font-size: 0.9rem; }
+        input { width: 100%; padding: 15px; margin-bottom: 10px; background: #2c2c2c; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1.2rem; box-sizing: border-box; }
+        
+        .letter-row { display: flex; gap: 5px; margin-bottom: 20px; }
+        .btn-l { flex: 1; padding: 12px; background: #333; border: 1px solid #444; color: var(--accent); border-radius: 8px; font-weight: bold; cursor: pointer; }
+        
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 10px; font-size: 1rem; transition: 0.3s; position: relative; }
+        .btn:active { transform: scale(0.95); filter: brightness(1.3); }
+        
+        .btn-fetch { background: #3700b3; color: white; }
+        .btn-save { background: var(--success); color: #000; margin-top: 10px; }
+        .btn-cloud { background: var(--accent); color: #000; }
+        .btn-start { background: var(--accent); color: #000; font-size: 1.2rem; margin-top: 20px; }
+        
+        .loading { opacity: 0.6; pointer-events: none; }
+        .loading::after { content: " ⏳"; }
+
+        #status { padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; display: none; font-weight: bold; }
+        .hist-box { background: #252525; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid var(--accent); min-height: 20px; font-size: 1.1rem; }
+        hr { border: 0; border-top: 1px solid #333; margin: 20px 0; }
+
+        .cb-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; cursor: pointer; user-select: none; }
+        .cb-row input { width: auto; margin: 0; transform: scale(1.5); }
+        .input-extra { display: none; background: #4a1212 !important; border: 2px solid var(--error) !important; color: white; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div id="start-screen" class="card">
+    <div class="logo">⚡</div>
+    <h1>Spis liczników energii elektrycznej<br>ROD Borówka w Nekli</h1>
+    <div class="info-text">
+        System pozwala na automatyczny zapis wprowadzonych odczytów na serwer ROD Borówka. 
+        Spisujący wprowadza swój identyfikator, pobiera ostatnie odczyty z bazy, a następnie wprowadza numer działki i odczytany stan licznika.
+    </div>
+    <div class="author">projekt Tomasz Mlicki</div>
+    <button class="btn btn-start" onclick="startApp()">WEJDŹ DO SYSTEMU</button>
+</div>
+
+<div id="main-app" class="card">
+    <h2>Liczniki ROD</h2>
+    <div id="status"></div>
+    
+    <label>1. KOD SEKTORA</label>
+    <input type="password" id="kod" placeholder="Wpisz kod...">
+    <button class="btn btn-fetch" id="btnFetch" onclick="pobierzZSerwera()">POBIERZ STANY Z EXCELA</button>
+
+    <hr>
+
+    <label>2. NUMER LICZNIKA</label>
+    <input type="text" id="nr" inputmode="decimal" placeholder="Np. 15" oninput="pokazH()">
+    
+    <div class="letter-row">
+        <button type="button" class="btn-l" onclick="dopiszLitere('a')">a</button>
+        <button type="button" class="btn-l" onclick="dopiszLitere('b')">b</button>
+        <button type="button" class="btn-l" onclick="dopiszLitere('c')">c</button>
+        <button type="button" class="btn-l" onclick="dopiszLitere('d')">d</button>
+        <button type="button" class="btn-l" onclick="dopiszLitere('e')">e</button>
+    </div>
+
+    <div id="hist" class="hist-box">Wpisz nr licznika...</div>
+
+    <label>3. NOWY STAN (ODCZYT)</label>
+    <input type="number" id="stan" step="0.01" placeholder="0.00">
+
+    <div class="cb-row" onclick="const c = document.getElementById('cbExtra'); c.checked = !c.checked; toggleExtra();">
+        <input type="checkbox" id="cbExtra" onclick="event.stopPropagation();" onchange="toggleExtra()">
+        <span style="font-weight: bold; font-size: 0.9rem;">DODATKOWA UWAGA</span>
+    </div>
+    <input type="text" id="extraText" class="input-extra" placeholder="Wpisz treść uwagi...">
+    
+    <button class="btn btn-save" onclick="zapiszLokalnie()">ZAPISZ ODCZYT LOKALNIE</button>
+    <button class="btn btn-cloud" id="btnSync" onclick="wyslijDoChmury()">WYŚLIJ WSZYSTKO DO CHMURY (0)</button>
+</div>
+
+<script>
+    const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbztn_CTMapDXhfqeGsO3X4bq9tFErL0asXd53iR6dxtfHk2AocBPcitMOKqcohGjMLw-g/exec"; 
+
+    let bazaZSerwera = {}; 
+    let kolejkaWysylki = JSON.parse(localStorage.getItem('rod_q_v17') || '[]');
+
+    function startApp() {
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+    }
+
+    function toggleExtra() {
+        const checked = document.getElementById('cbExtra').checked;
+        document.getElementById('extraText').style.display = checked ? 'block' : 'none';
+        if(!checked) document.getElementById('extraText').value = '';
+    }
+
+    function dopiszLitere(l) {
+        const input = document.getElementById('nr');
+        input.value += l;
+        pokazH(); 
+    }
+
+    async function pobierzZSerwera() {
+        const kod = document.getElementById('kod').value;
+        if(!kod) return alert("Wpisz kod sektora!");
+        const btn = document.getElementById('btnFetch');
+        btn.classList.add('loading');
+        msg("Pobieranie danych...", "#333");
+        try {
+            const resp = await fetch(GOOGLE_URL, { 
+                method: 'POST', 
+                body: new URLSearchParams({action: 'pobierz', klucz: kod}) 
+            });
+            bazaZSerwera = await resp.json();
+            msg("Baza licznika pobrana!", "#03dac6", 3000);
+            pokazH();
+        } catch(e) { msg("BŁĄD SERWERA!", "#cf6679"); }
+        btn.classList.remove('loading');
+    }
+
+    function pokazH() {
+        const nr = document.getElementById('nr').value.toLowerCase();
+        const box = document.getElementById('hist');
+        if (nr && bazaZSerwera[nr] !== undefined) {
+            box.innerHTML = `Ostatni stan w Excelu: <b>${bazaZSerwera[nr]}</b>`;
+        } else if (nr) {
+            box.innerText = "Brak historii dla tego nr.";
+        } else {
+            box.innerText = "Wpisz nr licznika...";
+        }
+    }
+
+    function zapiszLokalnie() {
+        const nr = document.getElementById('nr').value;
+        const stan = parseFloat(document.getElementById('stan').value);
+        if(!nr || isNaN(stan)) return alert("Wpisz nr i stan!");
+
+        let uwaga = "";
+        const ostatni = bazaZSerwera[nr.toLowerCase()] || 0;
+
+        if (stan < ostatni) {
+            if (!confirm(`UWAGA! Wpisujesz ${stan}, a poprzednio było ${ostatni}.\nCzy to poprawny odczyt?`)) return;
+            uwaga = "!!! STAN NIŻSZY !!!";
+        }
+
+        if (document.getElementById('cbExtra').checked) {
+            const dodatkowyTekst = document.getElementById('extraText').value;
+            if (dodatkowyTekst) {
+                uwaga = (uwaga ? uwaga + " | " : "") + dodatkowyTekst;
+            }
+        }
+
+        const teraz = new Date();
+        kolejkaWysylki.push({
+            data: teraz.toLocaleDateString('pl-PL'),
+            godzina: teraz.toLocaleTimeString('pl-PL'),
+            nr: nr,
+            stan: stan,
+            uwaga: uwaga
+        });
+
+        bazaZSerwera[nr.toLowerCase()] = stan; 
+        localStorage.setItem('rod_q_v17', JSON.stringify(kolejkaWysylki));
+        
+        document.getElementById('stan').value = '';
+        document.getElementById('cbExtra').checked = false;
+        toggleExtra();
+
+        aktualizujPrzycisk();
+        msg("Zapisano lokalnie (" + kolejkaWysylki.length + "/5)", "#333", 2000);
+
+        if (kolejkaWysylki.length >= 5) wyslijDoChmury();
+    }
+
+    function aktualizujPrzycisk() { 
+        document.getElementById('btnSync').innerText = `WYŚLIJ RĘCZNIE DO CHMURY (${kolejkaWysylki.length})`; 
+    }
+
+    async function wyslijDoChmury() {
+        const k = document.getElementById('kod').value;
+        const nrInput = document.getElementById('nr').value;
+        const stanInput = document.getElementById('stan').value;
+        const btn = document.getElementById('btnSync');
+
+        if (kolejkaWysylki.length === 0 && nrInput && stanInput) {
+            zapiszLokalnie();
+        }
+
+        if(!k || kolejkaWysylki.length === 0) return alert("Podaj kod i dane!");
+        
+        btn.classList.add('loading');
+        msg("Wysyłanie danych...", "#333");
+        
+        let fd = new URLSearchParams();
+        fd.append('dane', JSON.stringify(kolejkaWysylki));
+        fd.append('klucz', k);
+        fd.append('action', 'zapisz');
+        
+        try {
+            const r = await fetch(GOOGLE_URL, { method: "POST", body: fd });
+            const res = await r.text();
+            if (res === "Sukces") {
+                kolejkaWysylki = []; 
+                localStorage.setItem('rod_q_v17', '[]');
+                msg("EXCEL ZAKTUALIZOWANY!", "#03dac6", 4000); 
+                aktualizujPrzycisk();
+            } else { msg(res, "#cf6679"); }
+        } catch(e) { msg("Błąd połączenia!", "#cf6679"); }
+        
+        btn.classList.remove('loading');
+    }
+
+    function msg(t, c, czas) {
+        const s = document.getElementById('status');
+        s.innerText = t; s.style.display = 'block'; s.style.background = c;
+        s.style.color = (c === "#03dac6" ? "#000" : "#fff");
+        if(czas) setTimeout(() => s.style.display = 'none', czas);
+    }
+    aktualizujPrzycisk();
+
+    /* NOWY KOD: Rejestracja Service Workera */
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('Service Worker zarejestrowany', reg))
+            .catch(err => console.log('Błąd rejestracji Service Workera', err));
+        });
+    }
+    /* KONIEC NOWEGO KODU */
+</script>
+</body>
+</html>
