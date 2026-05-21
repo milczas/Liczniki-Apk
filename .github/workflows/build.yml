@@ -1,0 +1,40 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Pobieranie kodu repozytorium
+      uses: actions/checkout@v3
+
+    - name: Konfiguracja Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Konfiguracja środowiska Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Instalacja środowiska Cordova
+      run: npm install -g cordova
+
+    - name: Instalacja zaleznosci projektu
+      run: npm install
+
+    - name: Budowanie pliku APK
+      run: |
+        cordova platform add android
+        cordova build android
+
+    - name: Udostepnienie pliku APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: Liczniki-ROD-App
+        path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
